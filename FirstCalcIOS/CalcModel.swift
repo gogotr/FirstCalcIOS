@@ -9,14 +9,6 @@
 import Foundation
 
 
-func multifly(op1:Double, op2:Double) -> Double
-{
-    return op1*op2
-}
-func clearNumber(op: Double) -> Double{
-    return 0
-}
-
 class ClacModel
 {
     private var accumulator = 0.0
@@ -26,9 +18,12 @@ class ClacModel
         "e":Operation.Constant(M_E),//M_E,
         "√":Operation.UnaryOperation(sqrt),//sqrt,
         "cos":Operation.UnaryOperation(cos),
-        "*":Operation.BinaryOperation(multifly),
+        "*":Operation.BinaryOperation({$0 * $1}),
+        "/":Operation.BinaryOperation({$0 / $1}),
+        "+":Operation.BinaryOperation({$0 + $1}),
+        "-":Operation.BinaryOperation({$0 - $1}),
         "=":Operation.Equals,
-        "C":Operation.UnaryOperation(clearNumber)
+        "C":Operation.Constant(0.0),
     ]
     
     enum Operation{
@@ -46,17 +41,29 @@ class ClacModel
         if let Operation = operations[Symbol]
         {
             switch Operation {
-            case .Constant(let value) : accumulator = value
-            case .UnaryOperation(let foo): accumulator = foo(accumulator)
-            case .BinaryOperation(let foo): pending = PendingBinaryOperationInfo(binaryfunction: foo, firstOperand: accumulator)
-                NSLog("binary check")
+            case .Constant(let value) :
+                accumulator = value
+                
+            case .UnaryOperation(let foo):
+                accumulator = foo(accumulator)
+                
+            case .BinaryOperation(let foo):
+                executePendingBinaryOperation()
+                pending = PendingBinaryOperationInfo(binaryfunction: foo, firstOperand: accumulator)
+                
             case .Equals:
-                if pending != nil{
-                    accumulator = pending!.binaryfunction(pending!.firstOperand, accumulator)
-                }
+                    executePendingBinaryOperation()
             }
         }
     }
+    
+    private func executePendingBinaryOperation()
+    {
+        if pending != nil{
+            accumulator = pending!.binaryfunction(pending!.firstOperand, accumulator)
+        }
+    }
+    
     //옵셔널 변수 - 이항연산만 사용할 수 있다 나머지연산은 nil로 사용하기 위해서
     private var pending : PendingBinaryOperationInfo?
     
